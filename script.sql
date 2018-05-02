@@ -72,3 +72,15 @@ BEGIN
 END;
 $body$
 language 'plpgsql';
+
+
+CREATE OR REPLACE FUNCTION history.stop_track_table(
+  target_table regclass
+)
+RETURNS void AS $body$
+BEGIN
+    EXECUTE 'DROP TRIGGER IF EXISTS history_trigger ON ' || target_table::TEXT || ';';
+    EXECUTE 'DROP TABLE IF EXIST history.'||target_table::TEXT || ';';
+END;
+$body$
+language 'plpgsql';
