@@ -38,20 +38,26 @@ CREATE SCHEMA IF NOT EXISTS history;
 REVOKE ALL ON SCHEMA history FROM public;
 
 
-CREATE OR REPLACE FUNCTION history.track_reverse() RETURNS TRIGGER
-AS $body$
+CREATE OR REPLACE FUNCTION track_reverse()
+  RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    diffs jsonb;
 BEGIN
   IF TG_OP = 'INSERT' THEN
     EXECUTE format('INSERT INTO history.%s (row_fk, reverse_diffs) VALUES (%L, null);', tg_table_name::text, NEW.id);
   ELSEIF TG_OP = 'UPDATE' THEN
-    EXECUTE format('INSERT INTO history.%s (row_fk, reverse_diffs) VALUES (%L, %L);', tg_table_name::text, NEW.id, to_jsonb(OLD) - to_jsonb(NEW));
+    diffs = to_jsonb(OLD) - to_jsonb(NEW);
+    IF diffs <> '{}'::jsonb THEN
+      EXECUTE format('INSERT INTO history.%s (row_fk, reverse_diffs) VALUES (%L, %L);', tg_table_name::text, NEW.id, diffs);
+    END IF;
   ELSEIF TG_OP = 'DELETE' THEN
     EXECUTE format('INSERT INTO history.%s (row_fk, reverse_diffs) VALUES (%L, %L);', tg_table_name::text, OLD.id, to_jsonb(OLD));
   END IF;
   RETURN NULL;
 END;
-$body$
-language 'plpgsql';
+$$;
 
 CREATE OR REPLACE FUNCTION history.track_table_reverse(
   target_table regclass
