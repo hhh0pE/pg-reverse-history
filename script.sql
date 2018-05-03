@@ -70,7 +70,7 @@ BEGIN
       'id SERIAL NOT NULL PRIMARY KEY,
       row_fk bigint not null,
       reverse_diffs JSONB,
-      update_time TIMESTAMP WITH TIME ZONE) DEFAULT NOW()';
+      update_time TIMESTAMP WITH TIME ZONE DEFAULT NOW());';
 
     EXECUTE 'CREATE TRIGGER history_trigger AFTER INSERT OR UPDATE OR DELETE ON '||
             target_table::TEXT||' FOR EACH ROW EXECUTE PROCEDURE history.track_reverse();';
